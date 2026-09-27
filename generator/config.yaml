@@ -1,0 +1,22 @@
+# Data Generator Configuration
+simulation:
+  days: 10
+  orders_per_day: 20000
+  start_date: "2026-09-01"
+  random_seed: 42
+  merchant_count: 50
+  merchants_updated_per_day: 3
+
+injected_error_rates:
+  missing_settlement: 0.020  # ~2%
+  late_settlement: 0.030     # ~3% (arrives 2-5 days later)
+  amount_mismatch: 0.015     # ~1.5% (differs by Rs 1-500)
+  duplicate_charge: 0.010    # ~1% (same order charged twice within 5 mins)
+  orphan_payment: 0.005      # ~0.5% (gateway success with order not in app)
+  status_mismatch: 0.010     # ~1% (order paid vs gateway failed)
+  invalid_row: 0.010         # ~1% (null key, negative amount, bad date)
+  pending_resolved: 0.020    # ~2% (resolves to success/failed 1-2 days later)
+
+paths:
+  output_dir: "data"
+  answer_key: "dbt_upi/seeds/answer_key.csv"

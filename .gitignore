@@ -1,0 +1,59 @@
+# Environment and Secrets
+.env
+*.env
+.pgpass
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# dbt
+dbt_upi/target/
+dbt_upi/dbt_packages/
+dbt_upi/logs/
+dbt_upi/dbt_modules/
+
+# Generated Data / Scratch
+data/
+generator_output/
+*.csv
+!dbt_upi/seeds/answer_key.csv
+
+# Airflow
+airflow/logs/
+airflow/*.pid
+airflow/*.err
+airflow/*.log
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
