@@ -36,3 +36,15 @@ models:
                 field: merchant_id
               config:
                 where: "merchant_id is not null"
+
+  - name: daily_reconciliation_summary
+    description: One row per calendar day of reconciliation health, for a dashboard's daily trend chart.
+    columns:
+      - name: report_date
+        tests: [not_null, unique]
+
+  - name: merchant_discrepancy_summary
+    description: One row per merchant with discrepancy counts/rate, for a dashboard's merchant leaderboard.
+    columns:
+      - name: merchant_id
+        tests: [not_null, unique]
