@@ -6,11 +6,12 @@ DATE ?= $(shell date +%Y-%m-%d)
 START ?= 2026-09-01
 END ?= 2026-09-10
 
-.PHONY: help setup docker-up docker-down init-db generate run backfill test dbt-snapshot dbt-run dbt-test dbt-seed clean
+.PHONY: help setup lock docker-up docker-down init-db generate run backfill test dbt-snapshot dbt-run dbt-test dbt-seed clean
 
 help:
 	@echo "Available commands:"
-	@echo "  make setup          - Install dependencies"
+	@echo "  make setup          - Install pinned dependencies (requirements.txt)"
+	@echo "  make lock           - Re-pin requirements.txt from requirements.in"
 	@echo "  make docker-up      - Start local Postgres via docker compose"
 	@echo "  make docker-down    - Stop local Postgres"
 	@echo "  make init-db        - Initialize Postgres schemas and tables"
@@ -24,6 +25,10 @@ help:
 
 setup:
 	pip install -r requirements.txt
+
+lock:
+	pip install -q pip-tools
+	pip-compile requirements.in -o requirements.txt --resolver=backtracking --strip-extras
 
 docker-up:
 	docker compose up -d

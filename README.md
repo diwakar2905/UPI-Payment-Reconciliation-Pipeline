@@ -79,5 +79,6 @@ An end-to-end batch data engineering pipeline designed to reconcile UPI transact
 ├── tests/                      # pytest test suite for generator & ingestion
 ├── docker-compose.yml          # Local containerized infrastructure
 ├── Makefile                    # Developer workflow automation
-└── requirements.txt            # Python dependencies
+├── requirements.in             # Direct Python dependencies (loose bounds)
+└── requirements.txt            # Pinned lockfile, generated via `make lock`
 ```
