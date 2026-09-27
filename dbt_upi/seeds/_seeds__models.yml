@@ -1,0 +1,25 @@
+version: 2
+
+seeds:
+  - name: answer_key
+    description: >
+      Ground-truth reconciliation outcome per order_id, written by
+      generator/generate_data.py. Re-generate with `make generate` (or
+      `python generator/generate_data.py`) then `make dbt-seed` before
+      re-running dbt tests, since regenerating data overwrites this file.
+    config:
+      column_types:
+        order_id: varchar(64)
+        merchant_id: varchar(64)
+        amount: numeric(12, 2)
+        order_status: varchar(32)
+        error_type: varchar(32)
+        expected_result: varchar(32)
+    columns:
+      - name: order_id
+        tests: [not_null]
+      - name: expected_result
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['match', 'discrepancy', 'pending']
