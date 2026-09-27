@@ -36,8 +36,8 @@ def get_connection():
 @contextmanager
 def get_db_cursor(commit=False):
     conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
         yield cur
         if commit:
             conn.commit()
