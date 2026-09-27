@@ -21,6 +21,7 @@ select
     gst_on_fee,
     net_settled,
     settled_date,
+    coalesce(settlement_type, 'payment') as settlement_type,
     run_date
 from deduped
 where rn = 1

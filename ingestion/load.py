@@ -27,7 +27,8 @@ TABLES = {
     },
     "settlement": {
         "table": "raw.settlements",
-        "columns": ["settlement_id", "txn_id", "gross_amount", "mdr_fee", "gst_on_fee", "net_settled", "settled_date"],
+        "columns": ["settlement_id", "txn_id", "gross_amount", "mdr_fee", "gst_on_fee",
+                    "net_settled", "settled_date", "settlement_type"],
     },
 }
 

@@ -34,3 +34,8 @@ models:
         tests: [not_null, unique]
       - name: txn_id
         tests: [not_null]
+      - name: settlement_type
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['payment', 'refund']

@@ -22,4 +22,4 @@ seeds:
         tests:
           - accepted_values:
               arguments:
-                values: ['match', 'discrepancy', 'pending']
+                values: ['match', 'discrepancy', 'pending', 'refunded']

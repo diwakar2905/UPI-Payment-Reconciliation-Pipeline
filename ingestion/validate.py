@@ -31,10 +31,15 @@ CONTRACTS = {
         "allowed_values": {"gateway_status": {"success", "failed"}},
     },
     "settlement": {
-        "required": ["settlement_id", "txn_id", "gross_amount", "mdr_fee", "gst_on_fee", "net_settled", "settled_date"],
+        "required": ["settlement_id", "txn_id", "gross_amount", "mdr_fee", "gst_on_fee",
+                     "net_settled", "settled_date", "settlement_type"],
         "numeric": ["gross_amount", "mdr_fee", "gst_on_fee", "net_settled"],
+        # a refund row legitimately carries a negative gross_amount/net_settled
+        # (the principal being returned), so those two are exempt from the
+        # non-negative check when settlement_type='refund'
+        "signed_if_refund": {"gross_amount", "net_settled"},
         "timestamps": ["settled_date"],
-        "allowed_values": {},
+        "allowed_values": {"settlement_type": {"payment", "refund"}},
     },
 }
 
@@ -48,12 +53,15 @@ def validate_row(row, contract):
         if not row.get(field):
             return f"missing required field: {field}"
 
+    signed_if_refund = contract.get("signed_if_refund", set())
     for field in contract["numeric"]:
         try:
-            if float(row[field]) < 0:
-                return f"negative value for {field}: {row[field]}"
+            value = float(row[field])
         except (TypeError, ValueError):
             return f"non-numeric value for {field}: {row[field]!r}"
+        allow_negative = field in signed_if_refund and row.get("settlement_type") == "refund"
+        if value < 0 and not allow_negative:
+            return f"negative value for {field}: {row[field]}"
 
     for field in contract["timestamps"]:
         try:

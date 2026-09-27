@@ -22,12 +22,12 @@ models:
       class flagged.
     columns:
       - name: order_id
-        tests: [not_null]
+        tests: [not_null, unique]
       - name: reconciliation_status
         tests:
           - accepted_values:
               arguments:
-                values: ['matched', 'discrepancy', 'pending']
+                values: ['matched', 'discrepancy', 'pending', 'refunded']
       - name: merchant_id
         tests:
           - relationships:
@@ -36,6 +36,20 @@ models:
                 field: merchant_id
               config:
                 where: "merchant_id is not null"
+
+  - name: fact_payments
+    description: >
+      Transaction-grain payment fact - one row per gateway event (txn_id),
+      including every duplicate charge as its own row. Companion to the
+      order-grain fact_reconciliation.
+    columns:
+      - name: txn_id
+        tests: [not_null, unique]
+      - name: gateway_status
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['success', 'failed']
 
   - name: daily_reconciliation_summary
     description: One row per calendar day of reconciliation health, for a dashboard's daily trend chart.
@@ -47,4 +61,12 @@ models:
     description: One row per merchant with discrepancy counts/rate, for a dashboard's merchant leaderboard.
     columns:
       - name: merchant_id
+        tests: [not_null, unique]
+
+  - name: accuracy_by_error_type
+    description: >
+      Precision/recall of fact_reconciliation's discrepancy flags against the
+      generator's seeded answer_key ground truth, one row per error type.
+    columns:
+      - name: error_type
         tests: [not_null, unique]

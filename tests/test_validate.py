@@ -57,10 +57,30 @@ def test_valid_gateway_row_passes():
     assert validate_row(row, CONTRACTS["gateway"]) is None
 
 
+VALID_SETTLEMENT = {
+    "settlement_id": "SET-1", "txn_id": "TXN-1", "gross_amount": "100.50",
+    "mdr_fee": "1.50", "gst_on_fee": "0.27", "net_settled": "98.73",
+    "settled_date": "2026-09-01T00:00:00", "settlement_type": "payment",
+}
+
+
 def test_valid_settlement_row_passes():
-    row = {
-        "settlement_id": "SET-1", "txn_id": "TXN-1", "gross_amount": "100.50",
-        "mdr_fee": "1.50", "gst_on_fee": "0.27", "net_settled": "98.73",
-        "settled_date": "2026-09-01T00:00:00",
-    }
+    assert validate_row(VALID_SETTLEMENT, CONTRACTS["settlement"]) is None
+
+
+def test_settlement_negative_amount_fails_for_payment_type():
+    row = {**VALID_SETTLEMENT, "gross_amount": "-100.50", "net_settled": "-98.73"}
+    reason = validate_row(row, CONTRACTS["settlement"])
+    assert reason is not None and "negative value" in reason
+
+
+def test_settlement_negative_amount_passes_for_refund_type():
+    row = {**VALID_SETTLEMENT, "settlement_type": "refund",
+           "gross_amount": "-100.50", "mdr_fee": "0", "gst_on_fee": "0", "net_settled": "-100.50"}
     assert validate_row(row, CONTRACTS["settlement"]) is None
+
+
+def test_settlement_unexpected_type_fails():
+    row = {**VALID_SETTLEMENT, "settlement_type": "bogus"}
+    reason = validate_row(row, CONTRACTS["settlement"])
+    assert reason is not None and "unexpected value" in reason
