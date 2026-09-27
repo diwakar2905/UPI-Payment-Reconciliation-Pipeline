@@ -18,5 +18,20 @@ services:
       timeout: 5s
       retries: 10
 
+  metabase:
+    image: metabase/metabase:v0.50.8
+    container_name: upi_metabase
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      MB_DB_FILE: /metabase-data/metabase.db
+    volumes:
+      - upi_metabase_data:/metabase-data
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   upi_pg_data:
+  upi_metabase_data:
