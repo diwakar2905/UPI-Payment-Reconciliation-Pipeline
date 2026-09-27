@@ -106,3 +106,35 @@ def test_pending_order_is_tracked_for_later_resolution():
     assert len(sim.pending_orders) == 1
     assert orders[0]["status"] == "created"
     assert sim.answer_key[orders[0]["order_id"]][-1] == "pending"
+
+
+def test_settlement_defaults_to_t_plus_1():
+    sim = make_simulator()
+    sim.create_merchants(3)
+    orders, gateway = [], []
+    for _ in range(20):
+        sim._generate_order(dt.date(2026, 9, 1), dt.datetime(2026, 9, 1, tzinfo=dt.timezone.utc), orders, gateway)
+
+    assert dt.date(2026, 9, 1) not in sim.settlements_by_date, "settlement should not land same-day"
+    assert dt.date(2026, 9, 2) in sim.settlements_by_date, "settlement should land T+1 by default"
+
+
+def test_refunded_order_generates_reversal_settlement():
+    sim = make_simulator()
+    sim.create_merchants(3)
+    orders, gateway = [], []
+    for _ in range(200):
+        sim._generate_order(dt.date(2026, 9, 1), dt.datetime(2026, 9, 1, tzinfo=dt.timezone.utc), orders, gateway)
+
+    refunded_orders = [o for o in orders if o["status"] == "refunded"]
+    assert refunded_orders, "expected at least one refunded order out of 200"
+
+    all_settlement_rows = [row for rows in sim.settlements_by_date.values() for row in rows]
+    refund_rows = [row for row in all_settlement_rows if row[-1] == "refund"]
+    assert refund_rows, "expected at least one refund settlement row"
+    for row in refund_rows:
+        assert row[2] < 0, "refund gross_amount should be negative"
+        assert row[5] < 0, "refund net_settled should be negative"
+
+    for order in refunded_orders:
+        assert sim.answer_key[order["order_id"]][-1] in ("refunded", "discrepancy")

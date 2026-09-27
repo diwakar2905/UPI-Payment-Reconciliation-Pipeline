@@ -27,11 +27,14 @@ dashboard, so most become a single Metabase "question" with no extra SQL:
 
 | Chart | Source | Notes |
 |---|---|---|
-| Daily reconciliation trend | `marts.daily_reconciliation_summary` | Line chart of `matched_count` / `discrepancy_count` / `pending_count` over `report_date`. |
+| Daily reconciliation trend | `marts.daily_reconciliation_summary` | Line chart of `matched_count` / `discrepancy_count` / `refunded_count` / `pending_count` over `report_date`. |
 | Discrepancy rate | `marts.daily_reconciliation_summary` | `discrepancy_rate_pct` as a single-number trend or gauge. |
+| Unsettled amount | `marts.daily_reconciliation_summary` | `unsettled_amount` as a trend - money that should have settled but has no settlement row yet. |
+| Mismatch aging | `marts.daily_reconciliation_summary` | `avg_discrepancy_age_days` / `max_discrepancy_age_days` by `report_date` - a discrepancy that's still open many days later is a real problem, not just settlement lag. |
 | Merchant leaderboard | `marts.merchant_discrepancy_summary` | Table sorted by `discrepancy_rate_pct` desc, or a bar chart of `discrepancy_count` by `name`. |
 | Discrepancy breakdown | `marts.merchant_discrepancy_summary` | Stacked bar of `missing_settlement_count` / `late_settlement_count` / `amount_mismatch_count` / `duplicate_charge_count` / `status_mismatch_count` per merchant. |
 | Reconciliation drill-down | `marts.fact_reconciliation` | Filterable table for investigating a specific order/merchant/date. |
+| Payments ledger | `marts.fact_payments` | Transaction-grain view (every gateway event, incl. duplicates) for a raw payments audit. |
 
 Combine the first four into a single dashboard (**+ New dashboard**), and
 add the fifth as a linked detail view via a dashboard filter on

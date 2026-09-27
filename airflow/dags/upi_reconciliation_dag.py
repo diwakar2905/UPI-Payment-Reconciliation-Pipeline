@@ -15,7 +15,7 @@ REPO_DIR = "/opt/airflow/upi-payment-reconciliation-pipeline"
 
 default_args = {
     "owner": "data-eng",
-    "retries": 2,
+    "retries": 3,
     "retry_delay": timedelta(minutes=5),
 }
 

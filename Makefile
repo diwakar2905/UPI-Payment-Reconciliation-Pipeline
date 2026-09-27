@@ -39,7 +39,7 @@ docker-down:
 	docker compose down
 
 init-db:
-	psql -h $(PG_HOST) -p $(PG_PORT) -U $(PG_USER) -d $(PG_DB) -f sql/init.sql
+	PGPASSWORD="$(PG_PASSWORD)" psql -h $(PG_HOST) -p $(PG_PORT) -U $(PG_USER) -d $(PG_DB) -f sql/init.sql
 
 generate:
 	python generator/generate_data.py --days 10 --orders-per-day 20000
@@ -48,7 +48,7 @@ run:
 	python ingestion/extract.py --run-date $(DATE)
 	python ingestion/validate.py --run-date $(DATE)
 	python ingestion/load.py --run-date $(DATE)
-	cd dbt_upi && dbt snapshot --profiles-dir . && dbt run --profiles-dir . --vars '{"run_date": "$(DATE)"}' && dbt test --profiles-dir .
+	cd dbt_upi && dbt seed --profiles-dir . && dbt snapshot --profiles-dir . && dbt run --profiles-dir . --vars '{"run_date": "$(DATE)"}' && dbt test --profiles-dir .
 
 backfill:
 	@d="$(START)"; \

@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS raw.settlements (
     gst_on_fee NUMERIC(12, 2),
     net_settled NUMERIC(12, 2),
     settled_date DATE,
+    settlement_type VARCHAR(16) DEFAULT 'payment', -- 'payment' or 'refund' (refund rows carry negative amounts)
     run_date DATE NOT NULL,
     ingested_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

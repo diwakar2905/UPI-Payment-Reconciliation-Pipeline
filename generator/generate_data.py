@@ -179,12 +179,14 @@ class Simulator:
         amount = order_row["amount"]
         order_status = order_row["status"]
 
-        gateway_status = order_status if order_status in ("paid", "failed") else "failed"
+        # a refund only happens after a successful payment, so it gets the
+        # same gateway confirmation as a plain paid order
+        expected_gateway_status = "success" if order_status in ("paid", "refunded") else "failed"
+        gateway_status = expected_gateway_status
         error_type = None
         if self.rng.random() < self.errors["status_mismatch"]:
             error_type = "status_mismatch"
-            gateway_status = "failed" if gateway_status == "success" or gateway_status == "paid" else "success"
-        gateway_status = "success" if gateway_status == "paid" else gateway_status
+            gateway_status = "failed" if expected_gateway_status == "success" else "success"
 
         txn_id = f"TXN-{self._rand_hex(16)}"
         primary_row, primary_corrupted = self._make_gateway_event(order_id, amount, gateway_status, event_time, txn_id)
@@ -201,7 +203,7 @@ class Simulator:
                 order_id, amount, gateway_status, dup_time, f"TXN-{self._rand_hex(16)}")
             gateway_rows.append(dup_row)
 
-        if order_status != "paid" or gateway_status != "success":
+        if gateway_status != "success":
             self.answer_key[order_id] = self._answer_row(
                 order_id, merchant.merchant_id, amount, order_status, error_type)
             return
@@ -211,10 +213,11 @@ class Simulator:
                 order_id, merchant.merchant_id, amount, order_status, "missing_settlement")
             return
 
-        settled_date = run_date
+        # T+1 is the normal UPI settlement lag; late_settlement pushes well past it
+        settled_date = run_date + dt.timedelta(days=1)
         if self.rng.random() < self.errors["late_settlement"]:
             error_type = error_type or "late_settlement"
-            settled_date = run_date + dt.timedelta(days=self.rng.randint(2, 5))
+            settled_date = run_date + dt.timedelta(days=self.rng.randint(3, 6))
 
         gross_amount = amount
         if self.rng.random() < self.errors["amount_mismatch"]:
@@ -228,13 +231,27 @@ class Simulator:
 
         settlement_row = [
             f"SET-{self._rand_hex(16)}", txn_id, gross_amount, mdr_fee,
-            gst_on_fee, net_settled, settled_date.isoformat(),
+            gst_on_fee, net_settled, settled_date.isoformat(), "payment",
         ]
         if self.rng.random() < self.errors["invalid_row"]:
             error_type = error_type or "invalid_row"
             settlement_row = self._corrupt_row(settlement_row)
 
         self.settlements_by_date.setdefault(settled_date, []).append(settlement_row)
+
+        if order_status == "refunded":
+            # the merchant's discount fee/GST are not reversed - only the
+            # principal is returned to the customer, a few days after settlement
+            refund_date = settled_date + dt.timedelta(days=self.rng.randint(1, 3))
+            refund_row = [
+                f"SET-{self._rand_hex(16)}", txn_id, -gross_amount, 0.0,
+                0.0, -gross_amount, refund_date.isoformat(), "refund",
+            ]
+            self.settlements_by_date.setdefault(refund_date, []).append(refund_row)
+            self.answer_key[order_id] = self._answer_row(
+                order_id, merchant.merchant_id, amount, order_status, error_type or "refund")
+            return
+
         self.answer_key[order_id] = self._answer_row(
             order_id, merchant.merchant_id, amount, order_status, error_type or "clean")
 
@@ -264,8 +281,13 @@ class Simulator:
         return row
 
     def _answer_row(self, order_id, merchant_id, amount, order_status, error_type):
-        return [order_id, merchant_id, amount, order_status, error_type or "none",
-                "match" if error_type in (None, "clean") else "discrepancy"]
+        if error_type in (None, "clean"):
+            expected_result = "match"
+        elif error_type == "refund":
+            expected_result = "refunded"
+        else:
+            expected_result = "discrepancy"
+        return [order_id, merchant_id, amount, order_status, error_type or "none", expected_result]
 
     # ------------------------------------------------------------------ I/O
     def _write_orders(self, rows):
@@ -316,7 +338,8 @@ class Simulator:
             writer.writerows(rows)
 
     def flush_settlements(self):
-        header = ["settlement_id", "txn_id", "gross_amount", "mdr_fee", "gst_on_fee", "net_settled", "settled_date"]
+        header = ["settlement_id", "txn_id", "gross_amount", "mdr_fee", "gst_on_fee",
+                   "net_settled", "settled_date", "settlement_type"]
         for settled_date, rows in self.settlements_by_date.items():
             self._write_csv(settled_date, "settlement.csv", header, rows)
 
