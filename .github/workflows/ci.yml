@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: upi
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d upi"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PG_HOST: localhost
+      PG_PORT: 5432
+      PG_DB: upi
+      PG_USER: postgres
+      PG_PASSWORD: postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint (pyflakes)
+        run: |
+          pip install pyflakes
+          pyflakes generator ingestion tests
+
+      - name: Initialize database schema
+        run: psql -h localhost -p 5432 -U postgres -d upi -f sql/init.sql
+        env:
+          PGPASSWORD: postgres
+
+      - name: Run unit tests
+        run: pytest tests/ -v
+
+      - name: Generate a small synthetic dataset
+        run: python generator/generate_data.py --days 2 --orders-per-day 200
+
+      - name: Run ingestion for each generated day
+        run: |
+          for d in 2026-09-01 2026-09-02; do
+            python ingestion/extract.py --run-date "$d"
+            python ingestion/validate.py --run-date "$d"
+            python ingestion/load.py --run-date "$d"
+          done
+
+      - name: dbt seed / snapshot / run / test
+        working-directory: dbt_upi
+        run: |
+          dbt deps || true
+          dbt seed --profiles-dir .
+          dbt snapshot --profiles-dir .
+          dbt run --profiles-dir . --vars '{"run_date": "2026-09-02"}'
+          dbt test --profiles-dir .

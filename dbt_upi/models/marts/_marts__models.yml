@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: Calendar date spine used for time-series reconciliation reporting.
+    columns:
+      - name: date_day
+        tests: [not_null, unique]
+
+  - name: dim_merchants
+    description: SCD Type 2 merchant dimension, sourced from merchants_snapshot.
+    columns:
+      - name: merchant_id
+        tests: [not_null]
+      - name: dbt_valid_from
+        tests: [not_null]
+
+  - name: fact_reconciliation
+    description: >
+      One row per order (plus orphan gateway payments with no matching order),
+      joined against its gateway event and settlement, with every discrepancy
+      class flagged.
+    columns:
+      - name: order_id
+        tests: [not_null]
+      - name: reconciliation_status
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['matched', 'discrepancy', 'pending']
+      - name: merchant_id
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_merchants')
+                field: merchant_id
+              config:
+                where: "merchant_id is not null"

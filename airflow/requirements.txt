@@ -1,0 +1,8 @@
+# Airflow pulls in a large, version-pinned dependency graph, so it's kept
+# out of the top-level requirements.txt. Install with the matching
+# constraints file for your Python version, e.g.:
+#
+#   pip install "apache-airflow==2.9.3" \
+#     --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.9.3/constraints-3.11.txt"
+#   pip install -r requirements.txt  # then the project's own deps
+apache-airflow==2.9.3

@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: upi_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PG_DB:-upi}
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    volumes:
+      - upi_pg_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres} -d ${PG_DB:-upi}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  upi_pg_data:

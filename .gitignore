@@ -39,6 +39,7 @@ dbt_upi/target/
 dbt_upi/dbt_packages/
 dbt_upi/logs/
 dbt_upi/dbt_modules/
+dbt_upi/.user.yml
 
 # Generated Data / Scratch
 data/

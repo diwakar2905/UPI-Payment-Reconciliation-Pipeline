@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: Deduplicated app.orders bronze rows, one row per order_id.
+    columns:
+      - name: order_id
+        tests: [not_null, unique]
+      - name: merchant_id
+        tests: [not_null]
+      - name: amount
+        tests: [not_null]
+      - name: status
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['created', 'paid', 'failed', 'refunded']
+
+  - name: stg_gateway_events
+    description: Deduplicated gateway bronze events, one row per txn_id.
+    columns:
+      - name: txn_id
+        tests: [not_null, unique]
+      - name: gateway_status
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['success', 'failed']
+
+  - name: stg_settlements
+    description: Deduplicated settlement bronze records, one row per settlement_id.
+    columns:
+      - name: settlement_id
+        tests: [not_null, unique]
+      - name: txn_id
+        tests: [not_null]
