@@ -1,5 +1,5 @@
 # UPI Payment Reconciliation Pipeline Makefile
-include .env
+-include .env
 export
 
 DATE ?= $(shell date +%Y-%m-%d)
@@ -35,7 +35,12 @@ run:
 	cd dbt_upi && dbt snapshot && dbt run --vars '{"run_date": "$(DATE)"}' && dbt test
 
 backfill:
-	python -c "import datetime, subprocess, sys; s = datetime.date.fromisoformat('$(START)'); e = datetime.date.fromisoformat('$(END)'); d = s; [subprocess.run(['make', 'run', f'DATE={d.isoformat()}'], check=True) or (d := d + datetime.timedelta(days=1)) while d <= e]"
+	@d="$(START)"; \
+	end="$(END)"; \
+	while [ "$$(date -d "$$d" +%Y%m%d)" -le "$$(date -d "$$end" +%Y%m%d)" ]; do \
+		$(MAKE) run DATE=$$d; \
+		d=$$(date -d "$$d +1 day" +%Y-%m-%d); \
+	done
 
 test:
 	pytest tests/
